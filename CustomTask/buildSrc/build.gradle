@@ -1,0 +1,10 @@
+repositories {
+    mavenLocal()
+	mavenCentral()
+	jcenter()
+    maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+}
+
+dependencies {
+    compile 'org.jsoup:jsoup:1.8.3'
+}

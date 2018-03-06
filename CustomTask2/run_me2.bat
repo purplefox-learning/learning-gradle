@@ -1,0 +1,1 @@
+gradle -Pinput=gradle saySomething

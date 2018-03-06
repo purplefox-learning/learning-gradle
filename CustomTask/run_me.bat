@@ -1,0 +1,1 @@
+gradle checkGradleDocs checkGradleTerms checkDefaultWebsite

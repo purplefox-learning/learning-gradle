@@ -1,0 +1,23 @@
+task sayHello(type: MyGradleTask) {
+  value = 'world'
+}
+
+task saySomething(type: MyGradleTask) {
+  doLast {  
+    println "myprop = ${myprop}"
+    value = "${input}" 
+  }
+}
+
+//if we dont add doLast{}, saySomething() will also be configured (i.e. value will be checked)
+//if we call 'gradle sayHello' to only call sayHello task, we dont provide an value to the variable 'input'. in this case the gradle command will fail
+//uncomment the following three lines and comment the saySomething above and run 'gradle sayHello' to see the error
+//task saySomething(type: MyGradleTask) {
+//  value = "${input}" 
+//}
+
+task printProperty2 {
+	doLast {
+		println "myprop = ${myprop}"
+	}
+}
