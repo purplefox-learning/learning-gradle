@@ -1,0 +1,1 @@
+gradle -Pmyprop=myvalue -Pprop2=newValue2 printProperty printProperty2 printProp123

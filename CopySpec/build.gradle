@@ -1,0 +1,56 @@
+
+//YCM Note: (could be wrong, for reference only)
+//for example, if we have
+//	from Xxx/a/b/file.txt
+//	into Yyy/c
+//we are copy /a/b/file.txt into Yyy/c folder
+//making it as Yyy/c/a/b/file.txt
+
+
+
+//Create a new task of type Copy
+task website(type: Copy) {
+    into "${buildDir}/website"
+    from 'src/webroot'
+ 
+    into 'resources', {
+        from 'src/assets'
+    }
+}
+
+// We can use all CopySpec methods to add new specifications to the existing specifications.
+website.into('resources') {
+    from 'src/javascript'
+}
+ 
+// The copySpec method creates a CopySpec instance from the closure. The copySpec method is part of the Project object.
+CopySpec manualSpec = copySpec {
+    from('src/manual') {
+        include '**/*.html'
+    }
+}
+
+// And the with method accepts the CopySpec we created.
+website.with(manualSpec)
+ 
+// Print each file path that is copied.
+website.eachFile { 
+    println it.path
+}
+ 
+// New task of type Sync. The Sync task is also implementing the CopySpec interface. (Just like archive tasks: Zip, Tar, Jar)
+task deploy(type: Sync) {
+    destinationDir = file("${buildDir}/production")
+    from website
+}
+ 
+// Use rename method from CopySpec.
+deploy.rename { file ->
+    if (file == 'index.html') {
+        'main.html'
+    } else {
+        file
+    }
+}
+
+deploy.exclude 'not-for-production.html'

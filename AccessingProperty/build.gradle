@@ -1,0 +1,28 @@
+repositories {
+    mavenLocal()
+	mavenCentral()
+	jcenter()
+    maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+}
+
+//run either 'gradle printProperty' or 'gradle -Pmyprop=myvalue printProperty2'
+task printProperty {
+	doLast {
+		println 'user.home = ' + System.properties['user.home']
+		println 'user.dir = ' + System.getProperty("user.dir")
+	}
+}
+
+task printProperty2 {
+	doLast {
+		println "myprop = ${myprop}"
+	}
+}
+
+task printProp123 {
+	doLast {
+		println prop1
+		println prop2
+		println prop3		
+	}
+}
