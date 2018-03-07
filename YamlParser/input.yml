@@ -1,0 +1,8 @@
+# simple yaml file
+
+sample:
+    ycm1:
+        myjava: '@env.JAVA_HOME@/abcdefg'
+    ycm2:
+        url2: localhost
+        port2: 1234

@@ -1,0 +1,43 @@
+repositories {
+    mavenLocal()
+	mavenCentral()
+	jcenter()
+    maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+}
+
+//task dependency can be done in two ways, as illustrated below in callme and callme2
+
+task doNothing {
+	doLast {
+		println 'do nothing'
+	}
+}
+
+task printSomething {
+	mustRunAfter doNothing
+	doLast {
+		println 'hello from the other task'
+	}
+}
+
+task callme(dependsOn: printSomething) {
+	doLast {
+		println 'hello from the callme task'
+	}
+}
+
+
+task callme2 {
+	doLast {
+		println 'hello from the callme2 task'
+	}
+}
+
+task doSomethingElse {
+	doLast {
+		println 'do something else'
+	}
+}
+
+callme2.dependsOn doSomethingElse
+
