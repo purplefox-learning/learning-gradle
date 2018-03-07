@@ -1,0 +1,14 @@
+apply plugin: 'groovy'
+version = 1.0
+
+repositories {
+    mavenLocal()
+	mavenCentral()
+	jcenter()
+    maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.4.7'
+    testCompile 'junit:junit:4.12'
+}

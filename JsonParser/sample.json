@@ -1,0 +1,34 @@
+{
+  "name" : "Account",
+  "version" : 1,
+  "domain" : "Cash",
+  "area" : "Payment",
+  "plot" : "Gateway",
+  "serviceType" : "",
+  "canonicalName" : "",
+  "srcPackage" : "scbCashPymtGwyAcct",
+  "srcStatus" : "GOOD",
+  "devTeam" : "",
+  "operations" : [ {
+    "name" : "getBeneficiaryDetails",
+    "nameInProduction" : "getBeneficiaryDetails",
+    "stage" : "Live",
+    "srcStatus" : "GOOD",
+    "devTeam" : "",
+    "usages" : [ {
+      "provider" : "MEPS",
+      "consumer" : "iBanking",
+      "country" : "MY",
+      "countriesApplicable" : "",
+      "project" : "MY IBFT",
+      "business" : "",
+      "goLive" : "",
+      "decommissioned" : "",
+      "providerVersion" : "",
+      "providerProtocol" : "",
+      "consumerProtocol" : "",
+      "criteria" : "enhance",
+      "strategicTactical" : ""
+    } ]
+  } ]
+}

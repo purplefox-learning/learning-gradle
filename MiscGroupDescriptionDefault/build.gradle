@@ -1,0 +1,37 @@
+//run 'gradle theTaskName' or simply 'gradle' to run the default task defined below
+defaultTasks 'doSomeOtherThing'
+
+//run 'gradle tasks' and 'gradle tasks --all' to see how group and description works
+
+//Gradle has two phases, 
+//First phase is the configuration phase where the code specified directly in a task's closure is executed
+//The configuration block is executed for every (ALL) available task
+//Second phase is the execution phase where only the code inside doFirst/doLast closure is executed
+
+task doSomething {
+	group 'ycm test group'
+	description 'ycm custom doSomething task'
+	println 'do something 1'
+	doLast {
+		println 'do something AAA'
+	}
+}
+
+task doSomeOtherThing {
+	group 'ycm test group'
+	description 'ycm custom doSomeOtherThing task'
+	println 'do some other thing 2'
+	doLast {
+		println 'do some other thing BBB'
+	}
+}
+
+task doNothing {
+	//this task does not have any group and description
+	//thus this task is not visible in 'gradle tasks'
+	//it is only visible in 'gradle tasks --all'
+	println 'do nothing 3'
+	doLast {
+		println 'do nothing CCC'
+	}
+}

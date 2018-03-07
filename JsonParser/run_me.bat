@@ -1,0 +1,1 @@
+gradle -Pservice=somedata restJson

@@ -1,0 +1,41 @@
+import groovy.json.JsonSlurper
+	
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+        maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+    } 
+    dependencies {
+    }   
+}
+
+task restJson {
+	doLast {
+		//how to invoke: gradle -Pservice=whatever restJson
+		//def data = new URL( 'http://date.jsontest.com/?someParamName=${service}' ).text
+        
+        //for now we just use a local json to simulate the data
+		def data = file('sample.json').text
+        
+		//println data
+		
+        //JsonSlurper is the default json parser in groovy
+		//Reference: http://groovy-lang.org/json.html
+		def jsonSlurper = new JsonSlurper()
+		def jsonObj = jsonSlurper.parseText(data)
+		
+		/*
+		jsonObj.each {
+			oneline -> println oneline
+		}
+		*/
+		
+		println 'name is ' + jsonObj.name
+		println 'version is ' + jsonObj.version
+		println 'domain is ' + jsonObj.domain
+		println 'service package is ' + jsonObj.srcPackage
+		println 'first operation name is ' + jsonObj.operations[0].name
+    }
+}
