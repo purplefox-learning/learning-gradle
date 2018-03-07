@@ -1,0 +1,18 @@
+
+task starthere() {
+	doLast {
+		new File('spec.txt').eachLine { linetext ->
+			//simplePrintRunner(linetext)
+			complexPrintRunner(linetext)
+		}
+	}
+}
+
+def simplePrintRunner(linetext) {
+	println linetext
+}
+
+def complexPrintRunner(linetext) {
+	def (command, params) = linetext.split(':')
+	println command + '-->' + params
+}

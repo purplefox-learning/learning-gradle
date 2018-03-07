@@ -1,0 +1,21 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+        maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+    }
+    
+    dependencies {
+        classpath 'com.vogella.gradle:exampleplugin:1.0-SNAPSHOT'
+        //we may have multiple classpath lines here to support the execution of this build.gradle
+    }
+}
+
+//this is how we reference the plugin
+apply plugin: 'vogella'
+
+//this is how we reference the task defined in that plugin
+task testrun(type: com.vogella.gradle.exampleplugin.MyTask) {
+    println("running consumer task!")
+}

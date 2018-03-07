@@ -1,0 +1,16 @@
+//this single line is sufficient to let gradle do the java compilation by executing 'gradle build'
+apply plugin: 'java'
+apply plugin: 'application'
+
+sourceSets {
+	main {
+		java { srcDir 'src/main/java' }
+	}
+	test {
+		java { srcDir 'src/test/java' }
+	}
+}
+
+//with 'application' plugin and this main class declaration,
+//we will then be able to run the main using 'gradle run'
+mainClassName = 'com.example.Runner'
