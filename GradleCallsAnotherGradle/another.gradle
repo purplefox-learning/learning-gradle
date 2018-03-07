@@ -1,0 +1,4 @@
+
+task doSomething {
+	println 'hello from another gradle file'
+}

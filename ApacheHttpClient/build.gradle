@@ -1,0 +1,36 @@
+import groovy.json.JsonSlurper
+
+task httpRequestCatalog {
+	doLast {
+		com.scb.HttpClientHelper.testcase_catalog();
+	}
+}
+
+task httpRequestFunctionalServiceList {
+	doLast {
+		com.scb.HttpClientHelper.testcase_fsList();
+	}
+}
+
+task httpRequestTechnicalServiceList {
+	doLast {
+		com.scb.HttpClientHelper.testcase_tsList();
+	}
+}
+
+task httpRequestTechnicalServiceList2 {
+	doLast {
+		def data = com.scb.HttpClientHelper.testcase_tsList2();
+		
+		//Reference: http://groovy-lang.org/json.html
+		def jsonSlurper = new JsonSlurper()
+		def jsonObj = jsonSlurper.parseText(data)
+		
+		/*
+		jsonObj.each {
+			oneline -> println oneline
+		}
+		*/
+		
+	}
+}

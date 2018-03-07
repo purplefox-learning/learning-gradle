@@ -1,0 +1,15 @@
+repositories {
+    mavenLocal()
+	mavenCentral()
+	jcenter()
+    maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+}
+
+task printSomething {
+	println 'hello from the main gradle'
+}
+
+task callme(type: GradleBuild, dependsOn: printSomething) {
+	buildFile = 'another.gradle'
+    tasks = ['doSomething']
+}
