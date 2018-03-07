@@ -1,23 +1,28 @@
 task sayHello(type: MyGradleTask) {
-  value = 'world'
+    value = 'world'
 }
 
 task saySomething(type: MyGradleTask) {
-  doLast {  
-    println "myprop = ${myprop}"
-    value = "${input}" 
-  }
-}
-
-//if we dont add doLast{}, saySomething() will also be configured (i.e. value will be checked)
-//if we call 'gradle sayHello' to only call sayHello task, we dont provide an value to the variable 'input'. in this case the gradle command will fail
-//uncomment the following three lines and comment the saySomething above and run 'gradle sayHello' to see the error
-//task saySomething(type: MyGradleTask) {
-//  value = "${input}" 
-//}
-
-task printProperty2 {
-	doLast {
-		println "myprop = ${myprop}"
-	}
+    
+    //btw, in groovy,  
+    //x ?: y  is basically ---> 
+    //    x ? x : y
+    //
+    //somePOJO?.someField ?: 'novalue' is basically ---> 
+    //if (somePOJO!=null) { 
+    //    if (somePOJO.someField!=null) return somePOJO.someField 
+    //    else return 'novalue' 
+    //} else {
+    //    return 'novalue'
+    //}
+    
+    value = project.findProperty('input') ?: 'my-gradle'
+    
+    //the assignment line above is recommended because 'input' should be optional 
+    //after all, we can't force end-user to always to remember to supply the input, most input should be made optional)
+    
+    //so if we use 
+    //value = "$input" OR 
+    //value = "${input}"
+    //then 'input' is mandatory even when we only run sayHello task, this is NOT GOOD!
 }
