@@ -1,0 +1,1 @@
+gradle -Djavax.net.ssl.trustStore=default_plus_scbbitbucket_cacerts -Pservice=scbCoreBankingCustomer

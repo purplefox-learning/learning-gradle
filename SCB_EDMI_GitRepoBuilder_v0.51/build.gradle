@@ -1,0 +1,346 @@
+
+import groovy.json.JsonSlurper
+
+defaultTasks 'SetupRepo'
+
+buildscript {
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        jcenter()
+        maven { url "https://artifactory.global.standardchartered.com/artifactory/maven-release" }
+    }
+
+    dependencies {
+        classpath 'org.ajoberstar:grgit:1.9.1', 'pl.softmate:gradle-properties-yaml-plugin:0.0.2'
+    }
+}
+
+apply plugin: 'pl.softmate.gradle-properties-yaml-plugin'
+
+import org.ajoberstar.grgit.Grgit
+
+ext {
+	serviceName = "${service}"	//e.g. 'scbCoreBankingCustomer'
+	
+	//e.g. workingdir = 'C:/a/gradle-working-samples/EdmiTemp'
+	workingdir = System.getProperty("user.dir").replace("\\", "/");
+	
+	//TODO: parameterize this variable
+	codedumpRootDir = 'C:/a/gradle-working-samples/EdmiMigrationReverseEngineeringCodeDump'
+	
+	//TODO: need to restructure the directory
+	sourceDumpDir = codedumpRootDir + '/packages'
+	configDumpDir = codedumpRootDir + '/configs'
+	buildDumpDir = codedumpRootDir + '/pipeline'
+	
+	//Storage of intermediate data files
+	tempOutputRelativePath = '/tempOutput'
+	tempOutputDir = workingdir + tempOutputRelativePath
+	
+	//Git repository related directories
+	
+	localRepoDir = workingdir+'/LocalGitRepoRoot/' + serviceName
+	
+	remoteRepoDirOnLocalhost = workingdir+'/RemoteGitRepoRoot/' + serviceName + '.git'
+	remoteRepoUrlOnBitbucketHttp = 'https://MyId@bitbucket.global.standardchartered.com/scm/~MyId/' + serviceName + '.git'
+	remoteRepoUrlOnBitbucketSsh = 'ssh://git@bitbucket.global.standardchartered.com:7999/~MyId/' + serviceName + '.git'
+	
+	gitignore = 'a.gitignore'
+	
+	osName = ""
+	fsName = ""
+	canoncialName = ""
+	tsNames = []
+}
+
+
+////////// -- Initial Repo Setup Section --
+
+task initRepo() {
+	doLast {
+		
+		println 'working directory is ' + workingdir
+		println 'code dump directory is ' + codedumpRootDir
+	
+		println 'initializing local/remote git repository'
+		
+		//for remote repository which resides on a local directory
+		//createRemoteRepoOnLocalhost();
+		//cloneRemoteRepoOnLocalDirtoLocal();
+		
+		//for remote scb bitbucket repository
+		createRemoteRepoOnBitbucket();		
+		cloneRemoteRepoSSHtoLocal();
+		
+		println 'initializing master branch'
+		initMasterBranch();
+		
+		println 'initializing all other branches'
+		createBranches();
+		
+		//checkoutDevelopBranch();
+	}
+}
+
+////////// -- File Preparation/Copy Section --
+
+task getCatalogServiceMetadata(dependsOn: initRepo) {
+	doLast {
+		def packageName = serviceName
+		def catalogServiceMetadataJsonFile = 'serviceMetadata.json'
+		
+		println 'getting the service metadata in json from the catalog server'
+		def serviceMetadataJson = com.scb.HttpClientHelper.getCatalogMetadata(packageName)
+		saveOutputToFile(serviceMetadataJson,catalogServiceMetadataJsonFile)
+		copy {
+			into(localRepoDir+'/conf')
+			from(workingdir+'/'+tempOutputRelativePath) {
+				include catalogServiceMetadataJsonFile
+			}
+		}
+	}
+}
+task preparePackagesList {
+	doLast {
+		def tempConfigXmlFile = 'EdmiFunctionServiceConfig-'+serviceName+'.xml'
+		def tempAssociatedPackagesJsonFile = 'EdmiAssociatedPackages-'+serviceName+'.json'
+		
+		println 'getting the config xml for the given package ' + serviceName
+		
+		def xmlConfig = com.scb.HttpClientHelper.getPackageConfigXml(serviceName)
+		saveOutputToFile(xmlConfig,tempConfigXmlFile)
+		
+		//for troubleshooeting, we may want to load this xml config from a file
+		//def xmlConfig = com.scb.HttpClientHelper.getContentFromFile(tempConfigXmlFile)
+		
+		println 'getting the associated fs/ts/os package names for the package'
+		def packageInfo = com.scb.HttpClientHelper.getAssociatedPackagesForFS(xmlConfig);
+		saveOutputToFile(packageInfo,tempAssociatedPackagesJsonFile)
+		
+		//Reference: http://groovy-lang.org/json.html
+		def jsonSlurper = new JsonSlurper()
+		def jsonObj = jsonSlurper.parseText(packageInfo)
+		
+		/*
+		jsonObj.each {
+			oneline -> println oneline
+		}
+		*/
+		
+		canoncialName = jsonObj.CanonicalPackage
+		fsName = jsonObj.FSPackage
+		osName = jsonObj.OSPackage
+	
+		jsonObj.TSpackages.each {
+			eachTs -> tsNames.add(eachTs+"/**")
+		}
+		
+		/*
+		println 'canoncialName = ' + canoncialName
+		println 'fsName = ' + fsName
+		println 'osName = ' + osName
+		println 'tsNames = ' + tsNames
+		*/
+	}
+}
+
+task copyPackages(dependsOn: preparePackagesList) {
+	doLast {
+		//tsNames is a list which may look like ['scbCoreBankingCustomerEbbsTsv5/**', 'scbCoreBankingCustomerTsv2/**']
+		copy {
+			into(localRepoDir)
+			from(sourceDumpDir) {
+				include "${canoncialName}/**"
+				include "${fsName}/**"
+				include "${osName}/**"
+				include tsNames
+				includeEmptyDirs = true
+			}
+			exclude '**/*.bak'
+		}
+		/*
+		copy {
+			into(localRepoDir+'/'+serviceName+'/config')
+			from(workingdir+'/'+gitignore)
+			rename { String fileName ->
+				fileName.replace("a", "")
+			}
+		}
+		*/
+	}
+}
+
+task copyJenkinsfile(dependsOn: initRepo) {
+	doLast {
+		copy {
+			into(localRepoDir)
+			from(buildDumpDir) {
+				include "Jenkinsfile"
+			}
+		}
+	}
+}
+
+task createConfDir(dependsOn: initRepo) {
+	doLast {
+		mkdir "${localRepoDir}/conf/is"
+		mkdir "${localRepoDir}/conf/mws"
+		mkdir "${localRepoDir}/conf/broker"
+		forceDirectoryCreationinGit('conf/is')
+		forceDirectoryCreationinGit('conf/mws')
+		forceDirectoryCreationinGit('conf/broker')
+	}
+}
+
+task copyConfigFile(dependsOn: initRepo) {
+	doLast {
+		//Expected config xml file is at configDumpDir/configs/this-service-name/conf/edmi/configuration.xml
+		copy {
+			into(localRepoDir)
+			from("${configDumpDir}/${serviceName}") {
+				include "**/*.xml"
+				includeEmptyDirs = true
+			}
+			exclude '**/*.bak'
+		}
+	}
+}
+
+task prepareAllFiles(dependsOn: [initRepo, copyPackages, copyJenkinsfile, copyConfigFile, createConfDir, getCatalogServiceMetadata]) {
+}
+
+////////// -- Git Commit and Push Section --
+
+task addToGitAndCommit(dependsOn: prepareAllFiles)  {
+	//mustRunAfter initRepo, copyPackages, copyJenkinsfile, copyConfigFile, createConfDir, getCatalogServiceMetadata
+	doLast {
+		println 'adding all files to the local git repository'
+		addAllFilesToGit()
+	}
+}
+
+task pushToRemoteGitRepo(dependsOn: addToGitAndCommit) {
+	doLast {
+		println 'push all local committed files to the remote repository'
+		pushToRemoteRepo();
+	}
+}
+
+////////// -- Final Section --
+
+task SetupRepo(dependsOn: pushToRemoteGitRepo) {
+	doLast {
+		println 'building the git repository is completed'
+	}
+}
+
+
+////////// -- Generic Git Section --
+
+def addAllFilesToGit() {
+	def grgit = Grgit.open(dir: localRepoDir)
+	grgit.add( patterns: ['.',localRepoDir] )
+	def commit = grgit.commit( message: 'auto commit by toolkit', all: false)
+	grgit.close()	
+}
+
+def addFileToGit(file) {
+	def grgit = Grgit.open(dir: localRepoDir)
+	copy {
+		from file
+		into localRepoDir
+	}
+	grgit.add( patterns: [file,localRepoDir] )
+	def commit = grgit.commit( message: 'auto commit by toolkit', all: false)
+	grgit.close()
+}
+
+def prepareEnv() {
+	mkdir localRepoDir
+	mkdir remoteRepoDirOnLocalhost
+}
+
+def createRemoteRepoOnLocalhost() {
+	def grgit = Grgit.init(dir: remoteRepoDirOnLocalhost, bare: true)
+	grgit.close()
+}
+
+//gradle -Djavax.net.ssl.trustStore=default_plus_scbbitbucket_cacerts -Pservice=scbCoreBankingCustomer createRemoteRepoOnBitbucket
+//If you see sun.security.validator.ValidatorException: PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target
+//it is because JVM requires the cert to be present when visiting https url, however the default certificates in the jre does not include the scb bitbucket cert 
+def createRemoteRepoOnBitbucket() {
+	def jsonReq = new File("createRemoteRepoTemplate.json").text.replace("NewRepoName",serviceName)
+	def repoListJson = com.scb.HttpClientHelper.createRemoteRepo(jsonReq)
+	//println "the repository list in json is " + repoListJson
+}
+
+def cloneRemoteRepoOnLocalDirtoLocal() {
+	def grgit = Grgit.clone(dir: localRepoDir, uri: remoteRepoDirOnLocalhost)
+	grgit.close()
+}
+
+def cloneRemoteRepoSSHtoLocal() {
+	//uri: "ssh://git@bitbucket.global.standardchartered.com:7999/edmi/someProject.git"
+	def grgit = Grgit.clone(dir: localRepoDir, uri: remoteRepoUrlOnBitbucketSsh, refToCheckout: "master")
+    grgit.close()
+}
+
+def initMasterBranch() {
+	def grgit = Grgit.open(dir: localRepoDir)
+	copy {
+		from gitignore
+		into localRepoDir
+		rename { String fileName ->
+			fileName.replace("a", "")
+		}
+	}
+	grgit.add( patterns: ['.',localRepoDir] )
+	def commit = grgit.commit( message: 'auto commit by toolkit', all: false)
+
+	grgit.close()
+}
+
+def createBranches() {
+	def grgit = Grgit.open(dir: localRepoDir)
+	grgit.branch.add(name: 'develop')
+	grgit.branch.add(name: 'release')
+	//def branches = grgit.branch.list()
+	//println branches
+	grgit.close()
+}
+
+def checkoutDevelopBranch() {
+	def grgit = Grgit.open(dir: localRepoDir)
+	grgit.checkout(branch: 'develop', createBranch: false)
+	grgit.close()
+}
+def checkoutMasterBranch() {
+	def grgit = Grgit.open(dir: localRepoDir)
+	grgit.checkout(branch: 'master', createBranch: false)
+	grgit.close()
+}
+
+def pushToRemoteRepo() {
+	def grgit = Grgit.open(dir: localRepoDir)
+	grgit.push()
+	grgit.close()
+}
+
+
+////////// -- Utility Section --
+
+def saveOutputToFile(data,file) {
+	new File(tempOutputDir+'/'+file).text = data
+}
+
+def forceDirectoryCreationinGit(subDirRelativePath) {
+	copy {
+		into(localRepoDir+'/'+subDirRelativePath)
+		from(workingdir+'/'+gitignore)
+		rename { String fileName ->
+			fileName.replace("a", "")
+		}
+	}
+}
