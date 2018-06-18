@@ -1,1 +1,1 @@
-gradle sayHello
+gradle checkGradleDocs checkGradleTerms checkDefaultWebsite

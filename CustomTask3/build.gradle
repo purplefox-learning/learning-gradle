@@ -1,0 +1,28 @@
+task sayHello(type: MyGradleTask) {
+    value = 'world'
+}
+
+task saySomething(type: MyGradleTask) {
+    
+    //btw, in groovy,  
+    //x ?: y  is basically ---> 
+    //    x ? x : y
+    //
+    //somePOJO?.someField ?: 'novalue' is basically ---> 
+    //if (somePOJO!=null) { 
+    //    if (somePOJO.someField!=null) return somePOJO.someField 
+    //    else return 'novalue' 
+    //} else {
+    //    return 'novalue'
+    //}
+    
+    value = project.findProperty('input') ?: 'my-gradle'
+    
+    //the assignment line above is recommended because 'input' should be optional 
+    //after all, we can't force end-user to always to remember to supply the input, most input should be made optional)
+    
+    //so if we use 
+    //value = "$input" OR 
+    //value = "${input}"
+    //then 'input' is mandatory even when we only run sayHello task, this is NOT GOOD!
+}

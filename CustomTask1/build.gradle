@@ -1,0 +1,26 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+//in its simplest form, we may have the custom task definition and its groovy implementation in build.gradle
+
+class SomeDateTask extends DefaultTask {
+
+    String dateMessage = "Date is: "
+
+    @TaskAction
+    void showDate() {
+        println dateMessage + new Date()
+    }
+}
+
+task showDate(type: SomeDateTask)
+
+task customShowDate(type: SomeDateTask) {
+    dateMessage = "Custom date time is: "
+}
+
